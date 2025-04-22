@@ -250,13 +250,6 @@ def compute_ssim(reconstructed_im, target_im, is_minmax=False):
         target_im = minmax_normalize(target_im, eps)
     
     ssim_value = structural_similarity(target_im, reconstructed_im, \
-        gaussian_weights=True, sigma=1.5, use_sample_covariance=False,\
-            data_range= target_im.max() - target_im.min())
+        gaussian_weights=True, sigma=1.5, use_sample_covariance=False)
 
     return ssim_value
-
-def lr_scheduler(lr,warmup_epochs, warmup_lr, initial_lr, num_epochs):
-    if lr < warmup_epochs:
-        return warmup_lr + lr * (initial_lr - warmup_lr) / warmup_epochs
-    else:
-        return initial_lr * 0.5 * (1 + np.cos((lr - warmup_epochs) * np.pi / (num_epochs - warmup_epochs)))

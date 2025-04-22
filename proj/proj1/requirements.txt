@@ -1,0 +1,8 @@
+numpy
+jupyter
+matplotlib
+torch
+tensorboard
+torchvision
+tqdm
+functools
