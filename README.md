@@ -15,6 +15,8 @@ This cross-disciplinary course aims to address the knowledge gaps for students f
 - **Objective:** Reconstruct high-quality MRI images from undersampled k-space data.
 - **Approach:** Implement a U-Net and a 3D residual network.
 - **Techniques:** Employ dropout, dynamic learning rate scheduling and data augmentation to optimize performance.
+ 
+Generate variable density undersampling patterns with acceleration factor 5 and central k-space sampling, analyze the resulting aliasing artifacts, and evaluate reconstruction performance with PSNR and SSIM metrics.
 
 ## Labs
 
