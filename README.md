@@ -10,6 +10,8 @@ This cross-disciplinary course aims to address the knowledge gaps for students f
 
 ### Project 1: MRI Image Reconstruction
 
+[code](https://github.com/XiongWenye/Deep-Learning-Dynamic-MRI-Reconstruction)
+
 - **Objective:** Reconstruct high-quality MRI images from undersampled k-space data.
 - **Approach:** Implement a U-Net and a 3D residual network.
 - **Techniques:** Employ dropout, dynamic learning rate scheduling and data augmentation to optimize performance.
