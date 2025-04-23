@@ -509,15 +509,14 @@ def train(in_channels,
     
     # Create directory structure
     base_dir = os.path.join('images', args.folder_name)
-    sub_dirs = ['under_sampling', 'full_sampling', 'reconstruction']
+    sub_dirs = ['under_sampling', 'full_sampling', 'reconstruction', 'imaginary']
     for sub_dir in sub_dirs:
         os.makedirs(os.path.join(base_dir, sub_dir), exist_ok=True)
     
     # Create output directory for logging
     output_dir = "output"
     os.makedirs(output_dir, exist_ok=True)
-    output_path_for_loss = os.path.join(output_dir, "output.txt")
-    output_path_for_psnr_ssim = os.path.join(output_dir, "output.txt")
+    output_path = os.path.join(output_dir, "output.txt")
     
     # Load and prepare data
     inputs, labels, mask = process_data()
@@ -567,10 +566,10 @@ def train(in_channels,
             param_group['lr'] = lr
         
         # Training phase
-        train_loss, train_psnr, train_ssim = train_epoch(model, model2, model3, dataloader_train, optimizer, criterion)
+        train_loss = train_epoch(model, model2, model3, dataloader_train, optimizer, criterion)
         
         # Validation phase
-        val_loss, val_psnr, val_ssim = evaluate(model, model2, model3, dataloader_val, criterion)
+        val_loss = evaluate(model, model2, model3, dataloader_val, criterion)
         
         # Log metrics
         writer.add_scalar('Loss/train', train_loss, epoch)
@@ -579,16 +578,14 @@ def train(in_channels,
         print(log_message)
         
         # Save log to file
-        with open(output_path_for_loss, "a") as file:
+        with open(output_path, "a") as file:
             file.write(log_message + "\n")
-        with open(output_path_for_psnr_ssim, "a") as file:
-            file.write(f"{epoch+1}\t{train_psnr:.6f}\t{train_ssim:.6f}\t{val_psnr:.6f}\t{val_ssim:.6f}\n")
 
     # Testing phase
     test_results = test_models(model, model2, model3, dataloader_test, criterion, base_dir)
     
     # Log test results
-    log_test_results(test_results, output_path_for_loss, output_path_for_psnr_ssim)
+    log_test_results(test_results, output_path)
     
     # Save models
     save_model(model, "saved_model")
@@ -602,9 +599,6 @@ def train_epoch(model, model2, model3, dataloader, optimizer, criterion):
     model3.train()
     
     total_loss = 0
-    total_psnr = 0
-    total_ssim = 0
-    total_samples = 0
     for x, y in dataloader:
         # Forward pass through the models
         outputs1 = model(x[:, :, 0])
@@ -619,19 +613,8 @@ def train_epoch(model, model2, model3, dataloader, optimizer, criterion):
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-
-        outputs_np = outputs.detach().cpu().numpy()
-        y_np = y.detach().cpu().numpy()
-        batch_size = x.size(0)
-        for i in range(batch_size):
-            total_psnr += compute_psnr(outputs_np[i], y_np[i])
-            total_ssim += compute_ssim(outputs_np[i], y_np[i])
-
-        total_samples += batch_size
-        avg_psnr = total_psnr / total_samples
-        avg_ssim = total_ssim / total_samples
         
-    return total_loss / len(dataloader), avg_psnr, avg_ssim
+    return total_loss / len(dataloader)
 
 def evaluate(model, model2, model3, dataloader, criterion):
     """Evaluate models on validation or test data"""
@@ -640,9 +623,6 @@ def evaluate(model, model2, model3, dataloader, criterion):
     model3.eval()
     
     total_loss = 0
-    total_psnr = 0
-    total_ssim = 0
-    total_samples = 0
     with torch.no_grad():
         for x, y in dataloader:
             outputs1 = model(x[:, :, 0])
@@ -650,19 +630,8 @@ def evaluate(model, model2, model3, dataloader, criterion):
             tmp = torch.stack((outputs1, outputs2), dim=2)
             outputs = model3(lab.pseudo2real(tmp).unsqueeze(2)).squeeze(2)
             total_loss += criterion(outputs, y).item()
-
-            outputs_np = outputs.cpu().numpy()
-            y_np = y.cpu().numpy()
-            batch_size = x.size(0)
-            for i in range(batch_size):
-                total_psnr += compute_psnr(outputs_np[i], y_np[i])
-                total_ssim += compute_ssim(outputs_np[i], y_np[i])
-            total_samples += batch_size
-        
-    avg_psnr = total_psnr / total_samples
-    avg_ssim = total_ssim / total_samples
             
-    return total_loss / len(dataloader), avg_psnr, avg_ssim
+    return total_loss / len(dataloader)
 
 def test_models(model, model2, model3, dataloader, criterion, base_dir):
     """Test models and save visualization results"""
@@ -680,7 +649,7 @@ def test_models(model, model2, model3, dataloader, criterion, base_dir):
             outputs = model3(lab.pseudo2real(tmp).unsqueeze(2)).squeeze(2)
             
             # Save sample visualizations
-            save_visualizations(x, y, outputs, idx, base_dir)
+            save_visualizations(x, y, outputs, outputs2, idx, base_dir)
             
             # Calculate metrics
             for i in range(x.size(0)):
@@ -697,11 +666,12 @@ def test_models(model, model2, model3, dataloader, criterion, base_dir):
     
     return metrics
 
-def save_visualizations(x, y, outputs, idx, base_dir):
+def save_visualizations(x, y, outputs, imaginary, idx, base_dir):
     """Save visualization images"""
     under_sampling_filename = os.path.join(base_dir, 'under_sampling', f'under_sampling_{idx}.png')
     full_sampling_filename = os.path.join(base_dir, 'full_sampling', f'full_sampling_{idx}.png')
     reconstruction_filename = os.path.join(base_dir, 'reconstruction', f'reconstruction_{idx}.png')
+    imaginary_filename = os.path.join(base_dir, 'imaginary', f'imaginary_{idx}.png')
     
     imsshow(x[0, :, 2].cpu().numpy(), num_col=5, cmap='gray', flag="under_sampling", 
             is_colorbar=True, save_path=under_sampling_filename)
@@ -709,21 +679,23 @@ def save_visualizations(x, y, outputs, idx, base_dir):
             is_colorbar=True, save_path=full_sampling_filename)
     imsshow(outputs[0].cpu().numpy(), num_col=5, cmap='gray', flag="reconstruction", 
             is_colorbar=True, save_path=reconstruction_filename)
-
-def log_test_results(results, output_path_for_loss, output_path_for_psnr_ssim):
-    """Log test results to file"""
-    with open(output_path_for_loss, "a") as file:
-        loss_output = f'Loss: mean = {results["loss"]["mean"]:.8f}, std = {results["loss"]["std"]:.8f}'
-        print(loss_output)
-        file.write(loss_output + "\n")
+    imsshow(imaginary[0].cpu().numpy(), num_col=5, cmap='gray', flag="imaginary",
+            is_colorbar=True, save_path=imaginary_filename)
     
-    with open(output_path_for_psnr_ssim, "a") as file:
+
+
+def log_test_results(results, output_path):
+    """Log test results to file"""
+    with open(output_path, "a") as file:
+        loss_output = f'Loss: mean = {results["loss"]["mean"]:.8f}, std = {results["loss"]["std"]:.8f}'
         psnr_output = f'PSNR: mean = {results["psnr"]["mean"]:.8f}, std = {results["psnr"]["std"]:.8f}'
         ssim_output = f'SSIM: mean = {results["ssim"]["mean"]:.8f}, std = {results["ssim"]["std"]:.8f}'
         
+        print(loss_output)
         print(psnr_output)
         print(ssim_output)
         
+        file.write(loss_output + "\n")
         file.write(psnr_output + "\n")
         file.write(ssim_output + "\n")
 

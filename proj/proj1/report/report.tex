@@ -35,6 +35,7 @@
 \usepackage{graphicx}       % Required for including graphics
 \usepackage{subcaption}     % Required for subfigure environment
 \usepackage{listings}       % Required for lstlisting environment
+\usepackage{float}
 
 
 \title{BME1312 Project1 Report}
@@ -198,7 +199,7 @@ All the training loss and validation loss are recorded in the file named \texttt
 And the loss curves for 800 epochs are plotted in figure 3 below.
 \begin{figure}[ht]
   \centering
-  \includegraphics[width=\linewidth]{../assets/Training Loss and Validation Loss.png}
+  \includegraphics[width=\linewidth]{../assets/Training Loss and Validation Loss No opt.png}
   \caption{Training Loss and Validation Loss}
 \end{figure}
 
@@ -208,17 +209,17 @@ can be seen in the folder named /texttt{images}.
 \begin{figure}[ht]
   \centering
   \begin{subfigure}[b]{0.8\linewidth}
-    \includegraphics[width=\linewidth]{../images/output/full_sampling/full_sampling_0.png}
+    \includegraphics[width=\linewidth]{../images/No_opt/full_sampling/full_sampling_0.png}
     \caption{fully sampled image 0}
   \end{subfigure}
   \quad
   \begin{subfigure}[b]{0.8\linewidth}
-    \includegraphics[width=\linewidth]{../images/output/full_sampling/full_sampling_1.png}
+    \includegraphics[width=\linewidth]{../images/No_opt/full_sampling/full_sampling_1.png}
     \caption{fully sampled image 1}
   \end{subfigure}
   \quad
   \begin{subfigure}[b]{0.8\linewidth}
-    \includegraphics[width=\linewidth]{../images/output/full_sampling/full_sampling_2.png}
+    \includegraphics[width=\linewidth]{../images/No_opt/full_sampling/full_sampling_2.png}
     \caption{fully sampled image 2}
   \end{subfigure}
   \caption{Fully Sampled Images (Ground Truth)}
@@ -227,17 +228,17 @@ can be seen in the folder named /texttt{images}.
 \begin{figure}[ht]
   \centering
   \begin{subfigure}[b]{0.8\linewidth}
-    \includegraphics[width=\linewidth]{../images/output/under_sampling/under_sampling_0.png}
+    \includegraphics[width=\linewidth]{../images/No_opt/under_sampling/under_sampling_0.png}
     \caption{under sampled image 0}
   \end{subfigure}
   \quad
   \begin{subfigure}[b]{0.8\linewidth}
-    \includegraphics[width=\linewidth]{../images/output/under_sampling/under_sampling_1.png}
+    \includegraphics[width=\linewidth]{../images/No_opt/under_sampling/under_sampling_1.png}
     \caption{under sampled image 1}
   \end{subfigure}
   \quad
   \begin{subfigure}[b]{0.8\linewidth}
-    \includegraphics[width=\linewidth]{../images/output/under_sampling/under_sampling_2.png}
+    \includegraphics[width=\linewidth]{../images/No_opt/under_sampling/under_sampling_2.png}
     \caption{under sampled image 2}
   \end{subfigure}
   \caption{Under Sampled Images}
@@ -246,17 +247,17 @@ can be seen in the folder named /texttt{images}.
 \begin{figure}[ht]
   \centering
   \begin{subfigure}[b]{0.8\linewidth}
-    \includegraphics[width=\linewidth]{../images/output/reconstruction/reconstruction_0.png}
+    \includegraphics[width=\linewidth]{../images/No_opt/reconstruction/reconstruction_0.png}
     \caption{reconstruction image 0}
   \end{subfigure}
   \quad
   \begin{subfigure}[b]{0.8\linewidth}
-    \includegraphics[width=\linewidth]{../images/output/reconstruction/reconstruction_1.png}
+    \includegraphics[width=\linewidth]{../images/No_opt/reconstruction/reconstruction_1.png}
     \caption{reconstruction image 1}
   \end{subfigure}
   \quad
   \begin{subfigure}[b]{0.8\linewidth}
-    \includegraphics[width=\linewidth]{../images/output/reconstruction/reconstruction_2.png}
+    \includegraphics[width=\linewidth]{../images/No_opt/reconstruction/reconstruction_2.png}
     \caption{reconstruction image 2}
   \end{subfigure}
   \caption{Reconstruction Images}
@@ -271,46 +272,111 @@ Comment on the denoising/dealiasing performance:
 \end{enumerate}
 
 \subsection{Quantitative Evaluation}
-We can calculate the PSNR and SSIM for each testing slice before and after deep
-learning reconstruction. 
-% TODO: write the path of the outcome and report the mean and 
-% standard deviation of the PSNR and SSIM considering all the testing.
+After calculating the PSNR and SSIM for each testing slice before and after deep
+learning reconstruction, we can get that:
+\begin{enumerate}
+  \item The mean of PSNR: 24.15409541, the standard deviation of PSNR: 1.85842901
+  \item The mean of SSIM: 0.74309104, the standard deviation of SSIM: 0.03733812
+\end{enumerate}
+From these we can see that: Our neural network successfully restored most of the details 
+and structures. The reconstructed image is highly similar to the real image in terms 
+of structure and texture, and retains relatively rich anatomical details. 
+And the quality is mostly shown to be stable for different images.
 
 
 
 \section{Impact of Dropout and Dynamic Learning Rate}
+\textit{Note: }Detailed reconstruction images, related training loss, validation loss and their
+ loss curves can be found in \texttt{assets/Training Loss and Validation Loss.png}, 
+ \texttt{output/output.txt} and \texttt{images/output}.\\
 We add drop out to our network training, and the code can be found in \texttt{class UNet}.
 And a cosine annealing learning rate schedule with warm-up is employed, which can be
-found in \texttt{function train()}.
-% TODO: Compared to the baseline, this improves PSNR and SSIM by ....
+found in \texttt{function train()}.\\
+By calculating the PSNR and SSIM agian, we can get that:
+\begin{table}[H]
+  \caption{Compare PSNR and SSIM with different loss type}
+  \centering
+  \begin{tabular}{lllll}
+    \toprule
+    \cmidrule(r){1-2}
+    optimization?     & PSNR mean     & PSNR standard deviation & SSIM mean  & SSIM standard deviation \\
+    \midrule
+    No & 24.15409541  & 1.85842901  & 0.74309104 &  0.03733812  \\
+    Yes     & 29.08446121 & 1.93235576  & 0.84434632 & 0.03711063  \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+Compared to the baseline, adding drop out and dynamic learning rate improves PSNR and SSIM.\\
+The mean of PSNR changes from 24.15409541 to 29.08446121, while the standard deviation of it
+does not change too much, indicating that The reconstructed image is much closer to the real 
+image, noise and artifacts are reduced and the image becomes clearer.\\
+The mean of SSIM changes from 0.74309104 to 0.84434632, while the standard deviation of it
+does not change too much, indicating that The structural similarity between the reconstructed 
+image and the real image is significantly improved. The denoising and reconstruction performance 
+of the model is substantially improved and the model better captures the real structure of the image.\\
+These enhancements are due to:
+\begin{enumerate}
+  \item Dropout reduces overfitting and allows the model to generalize better to unseen data, 
+      avoiding training with too much noise or features from the training set, which can lead 
+      to poor performance on tests. At the same time, the model relies less on local features, 
+      making it more tolerant of undersampling artifacts.
+  \item The dynamic learning rate, ensures that the training both converges quickly and allows 
+      fine-tuning of the model parameters in smaller steps at a later stage for detail tuning 
+      to improve the quality of detail recovery in the reconstructed map.
+\end{enumerate}
+The above two points, combined with weight regularization, substantially enhance the 
+performance of our neural network in image reconstruction.
 
 
 
 \section{Compare L1 with L2}
-We replace the L2 loss with L1 loss in the training pipeline,
-retrain using the same architecture and training parameters.
-
-% TODO: The L1-trained model ... in  PSNR and SSIM, suggesting ...
+\textit{Note: }Detailed reconstruction images, related training loss, validation loss and their
+ loss curves can be found in \texttt{assets/Training Loss and Validation Loss L1.png}, 
+ \texttt{output/L1\_Loss\_output.txt} and \texttt{images/L1}.\\
+We replace the L2 loss with L1 loss in the training pipeline, retrain using the same architecture 
+and training parameters, then we get the new PSNR and SSIM. In the table below, we compare them
+with the outcome in (c):
+\begin{table}[H]
+  \caption{Compare PSNR and SSIM with different loss type}
+  \centering
+  \begin{tabular}{lllll}
+    \toprule
+    \cmidrule(r){1-2}
+    Loss     & PSNR mean     & PSNR standard deviation & SSIM mean  & SSIM standard deviation \\
+    \midrule
+    L1 & 29.15108941  & 2.24063664  & 0.84389277 &  0.04208510  \\
+    L2     & 29.08446121 & 1.93235576  & 0.84434632 & 0.03711063  \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+We can see that L1 loss yields higher PSNR and L2 loss yields higher SSIM in the testing dataset.\\
+Considering that the standard deviations of both PSNR and SSIM are small, it indicates that the 
+performance of the models trained by the two loss functions is stable and similar.\\
+If we are more concerned about the amount of noise and the overall error, then L1 loss is slightly better; 
+if we are more concerned about the degree of structure recovery and the visual quality of the image, 
+then L2 loss is slightly better.
 
 
 
 \section{Unrolled Deep Learning Reconstruction Network}
 % TODO: 
 
-\section{Tips for writing}
-\label{tips}
 
 
-\subsection{Headings: second level}
-\subsubsection{Headings: third level}
+% \section{Tips for writing}
+% \label{tips}
+
+
+% \subsection{Headings: second level}
+% \subsubsection{Headings: third level}
 
 
 
-\subsection{Footnotes}
+% \subsection{Footnotes}
 
-\footnote{As in this example.}
+% \footnote{As in this example.}
 
-\subsection{Figures}
+% \subsection{Figures}
 
 % \begin{figure}
 %   \centering
@@ -319,7 +385,7 @@ retrain using the same architecture and training parameters.
 % \end{figure}
 
 
-\subsection{Tables}
+% \subsection{Tables}
 
 % \begin{table}
 %   \caption{Sample table title}
