@@ -513,7 +513,7 @@ def train(
     # Create output directory for logging
     output_dir = "output"
     os.makedirs(output_dir, exist_ok=True)
-    output_path = os.path.join(output_dir, "output.txt")
+    output_path = os.path.join(output_dir, "No_Opt_output.txt")
 
     # Load and prepare data
     inputs, labels, mask = process_data()
