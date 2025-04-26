@@ -4,7 +4,7 @@ from .utils import imgshow, imsshow
 from .utils import compute_num_params as compute_params
 from .dataset import FastmriKnee, DatasetReconMRI
 from .dataset import arbitrary_dataset_split as split_dataset
-from .utils import complex2pseudo, pseudo2real, pseudo2complex, kspace2image, image2kspace
+from .utils import complex2pseudo, pseudo2real, pseudo2complex, kspace2image, image2kspace, real2UnetInput
 
 from .models import DataConsistencyLayer
 

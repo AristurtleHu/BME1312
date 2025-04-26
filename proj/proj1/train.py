@@ -485,7 +485,7 @@ def process_data():
         plt.colorbar()
         
         plt.subplot(1, 3, 3)
-        plt.imshow(np.abs(mask[0, 0].numpy()), cmap='gray')
+        plt.imshow(np.abs(mask[0, i].numpy()), cmap='gray')
         plt.title('Sampling Mask')
         plt.colorbar()
         
@@ -509,7 +509,7 @@ def train(in_channels,
     
     # Create directory structure
     base_dir = os.path.join('images', args.folder_name)
-    sub_dirs = ['under_sampling', 'full_sampling', 'reconstruction', 'imaginary']
+    sub_dirs = ['under_sampling', 'full_sampling', 'reconstruction', 'imaginary', 'real']
     for sub_dir in sub_dirs:
         os.makedirs(os.path.join(base_dir, sub_dir), exist_ok=True)
     
@@ -649,7 +649,7 @@ def test_models(model, model2, model3, dataloader, criterion, base_dir):
             outputs = model3(lab.pseudo2real(tmp).unsqueeze(2)).squeeze(2)
             
             # Save sample visualizations
-            save_visualizations(x, y, outputs, outputs2, idx, base_dir)
+            save_visualizations(x, y, outputs, outputs2, outputs1, idx, base_dir)
             
             # Calculate metrics
             for i in range(x.size(0)):
@@ -666,12 +666,13 @@ def test_models(model, model2, model3, dataloader, criterion, base_dir):
     
     return metrics
 
-def save_visualizations(x, y, outputs, imaginary, idx, base_dir):
+def save_visualizations(x, y, outputs, imaginary, real, idx, base_dir):
     """Save visualization images"""
     under_sampling_filename = os.path.join(base_dir, 'under_sampling', f'under_sampling_{idx}.png')
     full_sampling_filename = os.path.join(base_dir, 'full_sampling', f'full_sampling_{idx}.png')
     reconstruction_filename = os.path.join(base_dir, 'reconstruction', f'reconstruction_{idx}.png')
     imaginary_filename = os.path.join(base_dir, 'imaginary', f'imaginary_{idx}.png')
+    real_filename = os.path.join(base_dir, 'real', f'real_{idx}.png')
     
     imsshow(x[0, :, 2].cpu().numpy(), num_col=5, cmap='gray', flag="under_sampling", 
             is_colorbar=True, save_path=under_sampling_filename)
@@ -681,7 +682,8 @@ def save_visualizations(x, y, outputs, imaginary, idx, base_dir):
             is_colorbar=True, save_path=reconstruction_filename)
     imsshow(imaginary[0].cpu().numpy(), num_col=5, cmap='gray', flag="imaginary",
             is_colorbar=True, save_path=imaginary_filename)
-    
+    imsshow(real[0].cpu().numpy(), num_col=5, cmap='gray', flag="real",
+            is_colorbar=True, save_path=real_filename)
 
 
 def log_test_results(results, output_path):

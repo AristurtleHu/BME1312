@@ -14,6 +14,7 @@ val_losses = []
 output_file_path = Path("./output/output.txt")
 output_file_path_L1 = Path("./output/L1_Loss_output.txt")
 output_file_path_No_Opt = Path("./output/No_Opt_output.txt")
+output_file_path_unrolled = Path("./output/unrolled_output.txt")
 
 with open(output_file_path, "r") as f:
     for line in f:
@@ -104,4 +105,39 @@ plt.title("Training and Validation Loss Curve without Optimization")
 plt.legend()
 plt.grid(True)
 plt.savefig(f"assets/Training Loss and Validation Loss No opt.png")
+plt.close()
+
+# Reset lists for unrolled plot
+train_losses_unrolled = []
+val_losses_unrolled = []
+
+with open(output_file_path_unrolled, "r") as f:
+    for line in f:
+        # Example line: Epoch [1/300], Train Loss: 0.088762, Val Loss: 0.068758, Epoch Time: 274.75s
+        if "Train Loss" in line and "Val Loss" in line:
+            try:
+                parts = line.strip().split(",")
+                # Find the part containing "Train Loss" and extract the value
+                train_part = [p for p in parts if "Train Loss" in p][0]
+                train_loss = float(train_part.split(":")[1].strip())
+                # Find the part containing "Val Loss" and extract the value
+                val_part = [p for p in parts if "Val Loss" in p][0]
+                val_loss = float(val_part.split(":")[1].strip())
+
+                train_losses_unrolled.append(train_loss)
+                val_losses_unrolled.append(val_loss)
+            except (IndexError, ValueError) as e:
+                print(f"Skipping line due to parsing error: {line.strip()} - {e}")
+
+
+# Plot unrolled losses
+plt.figure(figsize=(8, 5))
+plt.plot(train_losses_unrolled, label="Train Loss (Unrolled)")
+plt.plot(val_losses_unrolled, label="Validation Loss (Unrolled)")
+plt.xlabel("Epoch")
+plt.ylabel("Loss")
+plt.title("Training and Validation Loss Curve (Unrolled)")
+plt.legend()
+plt.grid(True)
+plt.savefig(f"assets/Training Loss and Validation Loss Unrolled.png")
 plt.close()

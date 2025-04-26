@@ -12,11 +12,11 @@
 
 % to compile a preprint version, e.g., for submission to arXiv, add add the
 % [preprint] option:
-    \usepackage[preprint]{neurips_2023}
+  \usepackage[preprint]{neurips_2023}
 
 
 % to compile a camera-ready version, add the [final] option, e.g.:
-    % \usepackage[final]{neurips_2023}
+  % \usepackage[final]{neurips_2023}
 
 
 % to avoid loading the natbib package, add option nonatbib:
@@ -36,9 +36,10 @@
 \usepackage{subcaption}     % Required for subfigure environment
 \usepackage{listings}       % Required for lstlisting environment
 \usepackage{float}
+\usepackage{amsmath}        % For math environments like equation
 
 
-\title{BME1312 Project1 Report}
+\title{BME1312 Project1 Report: Deep Learning for MRI Reconstruction}
 
 
 % The \author macro works with any number of authors. There are two commands
@@ -52,7 +53,7 @@
 
 \author{%
   Wenye Xiong \\
-  2023533 \\
+  2023533141 \\
   \texttt{xiongwy2023@shanghaitech.edu.cn}
   \And
   Renyi Yang \\
@@ -60,7 +61,7 @@
   \texttt{yangry2023@shanghaitech.edu.cn}
   \AND
   Jiaxing Wu \\
-  2023533 \\
+  2023533160 \\
   \texttt{wujx2023@shanghaitech.edu.cn}
   \And
   Boyang Xia \\
@@ -81,12 +82,13 @@
 \begin{abstract}
   This project uses deep learning to reconstruct high-quality dynamic MRI images
   from undersampled data. We propose a deep-learning-based denoising framework combining
-  two independent UNet modules and a 3D ResNet to explore the temporal correlation.
+  two independent UNet modules (processing real and imaginary components separately) and a 3D ResNet to explore the temporal correlation.
   We generate variable density undersampling patterns with acceleration factor 5 and
-  central k-space sampling, analyze the resulting aliasing artifacts, and evaluate
+  11 central k-space lines per frame, analyze the resulting aliasing artifacts, and evaluate
   reconstruction performance with PSNR and SSIM metrics. Additionally,
   we investigate the effects of dropout, dynamic learning rate schedules,
-  and compare L1 versus L2 losses. Finally, we % TODO: for part(e)
+  and compare L1 versus L2 losses. Finally, we explore an unrolled network architecture
+  incorporating data consistency layers between cascaded instances of our base reconstruction network.
 \end{abstract}
 
 \section{Variable Density Random Undersampling Pattern Generation and Aliasing Artifacts Analysis}
@@ -98,7 +100,7 @@ We were asked to generate a variable density random undersampling mask $U$ match
 dataset size, with acceleration factor 5 and 11 fully sampled central k-space lines per frame.
 The mask values are 1 at sampled locations and 0 otherwise.
 
-The provided code generate a 4D undersampling mask (shape [batch, frames, height, width]) using the following steps:
+The provided code generates a 4D undersampling mask (shape [batch, frames, height, width]) using the following steps:
 \begin{enumerate}
   \item Initialization: A zero-initialized mask is created with the input shape.
   \item Central Region Sampling: For each frame, 11 central k-space lines are
@@ -112,21 +114,32 @@ The provided code generate a 4D undersampling mask (shape [batch, frames, height
 \end{enumerate}
 
 \subsection{Undersampling Masks Plotting}
-Figure 1 below shows the undersampling mask for one dynamic frame and undersampling masks in the ky-t dimension.
+Figure \ref{fig:undersampling_mask} shows the undersampling mask for one dynamic frame and undersampling masks in the ky-t dimension.
 
 \begin{figure}[ht]
   \centering
   \includegraphics[width=\linewidth]{../assets/undersampling_mask.png}
-  \caption{Undersampling Mask}
-  \label{fig:undersampling mask for one dynamic frame and undersampling masks in the ky-t dimension}
+  \caption{Undersampling Mask for one dynamic frame and undersampling masks in the ky-t dimension.}
+  \label{fig:undersampling_mask}
 \end{figure}
 
 Thus we can see that the sampling mask is not the same for different dynamic frames.
-That's because sampling positions are randomized per frame to disrupt coherent aliasing artifacts in time.
+That's because sampling positions are randomized per frame to disrupt coherent aliasing artifacts in time. Figure \ref{fig:multiple_masks} shows masks for multiple frames.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.8\linewidth]{../assets/mask.png}
+  \caption{Multiple sampling masks showing the variable density patterns across different temporal frames.}
+  \label{fig:multiple_masks}
+\end{figure}
 
 \subsection{Aliased Images Depiction and Comparison}
 From the stem of this question we can know that, given a fully sampled image $m$,
-the aliased image $b$ is computed as $F^{-1} U F m$, where $F$ is the Fourier transform.
+the aliased image $b$ is computed as:
+\begin{equation}
+  b = F^{-1} U F m
+\end{equation}
+where $F$ is the Fourier transform.
 
 In function \texttt{process\_data()}, we first load the dynamic MRI dataset dataset from the \texttt{cine.npz} file,
 and convert the data into PyTorch tensor labels, which are used as ground truth for subsequent processing. Then we
@@ -135,29 +148,30 @@ and then apply the mask to the k-space data, and convert the fully sampled image
 domain by Fourier transform (\texttt{image2kspace}). After that, we undersample the k-space data through the mask,
 and perform an inverse Fourier transform (\texttt{kspace2image}) on the undersampled k-space to generate an aliased image.
 
-Figure 2 below compares the fully sampled image, aliased image, and sampling mask in Fourier domain.
+Figure \ref{fig:comparison_images} compares the fully sampled image, aliased image, and sampling mask in Fourier domain.
 Here we choose the first 3 images generated to better compare the aliased images with the fully sampled image.
 
 \begin{figure}[ht]
   \centering
   \begin{subfigure}[b]{\linewidth}
     \includegraphics[width=\linewidth]{../assets/comparison_image_0.png}
-    \caption{comparison image 0}
+    \caption{Comparison for frame 0}
     \label{fig:comparison_image_0}
   \end{subfigure}
   \quad
   \begin{subfigure}[b]{\linewidth}
     \includegraphics[width=\linewidth]{../assets/comparison_image_1.png}
-    \caption{comparison image 1}
+    \caption{Comparison for frame 1}
     \label{fig:comparison_image_1}
   \end{subfigure}
   \quad
   \begin{subfigure}[b]{\linewidth}
     \includegraphics[width=\linewidth]{../assets/comparison_image_2.png}
-    \caption{comparison image 2}
+    \caption{Comparison for frame 2}
     \label{fig:comparison_image_2}
   \end{subfigure}
-  \caption{compare the fully sampled images with aliased images}
+  \caption{Comparison between fully sampled (left), undersampled (middle), and corresponding sampling mask (right) for different frames.}
+  \label{fig:comparison_images}
 \end{figure}
 
 Description of aliased images: Since the low-frequency information in the center k-space
@@ -185,27 +199,33 @@ and testing sets with ratios 4:1:2, resulting in 114 training, 29 validation,
 and 57 testing samples.
 
 \subsection{CNN Network Designing and Training}
-Our denoising network consists of two independent 2D UNet modules processing
-separate input channels, whose outputs are stacked and fed into a 3D ResNet.
-This design can effectively utilize both spatial information (2D UNet processing)
-and temporal information (capturing dynamic changes via 3D ResNet) of the image
-to better achieve the denoising task.
+Our reconstruction network consists of three components:
+\begin{enumerate}
+  \item \textbf{Dual 2D UNet Architecture:} Two independent UNet modules process the real and imaginary parts of the complex MRI data separately. Each UNet features an encoder-decoder structure with skip connections, attention mechanisms in the bottleneck layer, dropout (p=0.3), LeakyReLU activation, and channel/spatial attention modules.
+  \item \textbf{Concatenation:} The outputs of the two UNet branches are concatenated along the channel dimension.
+  \item \textbf{3D ResNet (Temporal Fusion):} The concatenated features are fed into a lightweight 3D ResNet to integrate temporal information across the MRI sequence using 3D convolutions and residual connections. A final 1x1x1 convolution maps features to the output channels.
+\end{enumerate}
+This design (shown in Figure \ref{fig:pipeline}) effectively utilizes both spatial information (2D UNet processing) and temporal information (capturing dynamic changes via 3D ResNet) for the reconstruction task.
 
-We train our network with Adam optimizer, initial learning rate $10^{-4}$,
-weight decay $10^{-4}$, batch size 10, and $L2$ loss (MSE).
-Note that training and validation losses are logged per epoch.
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\linewidth]{../assets/pipeline.png}
+  \caption{Overall architecture of our proposed reconstruction network with dual UNet branches for real and imaginary components and 3D ResNet for temporal fusion.}
+  \label{fig:pipeline}
+\end{figure}
 
-All the training loss and validation loss are recorded in the file named \texttt{output.txt}.
-And the loss curves for 800 epochs are plotted in figure 3 below.
+We first train a baseline network \textbf{without} dropout and dynamic learning rate schedule, using a constant learning rate. The parameters are: Adam optimizer, initial learning rate $10^{-4}$, weight decay $10^{-4}$, batch size 10, and $L2$ loss (MSE). Training and validation losses are logged per epoch.
+
+All the training loss and validation loss are recorded in the file named \texttt{output/No\_opt\_output.txt}.
+The loss curves for 800 epochs are plotted in Figure \ref{fig:loss_no_opt}.
 \begin{figure}[ht]
   \centering
   \includegraphics[width=\linewidth]{../assets/Training Loss and Validation Loss No opt.png}
-  \caption{Training Loss and Validation Loss}
+  \caption{Training Loss and Validation Loss (No Dropout/Dynamic LR)}
+  \label{fig:loss_no_opt}
 \end{figure}
 
-In the figure 4, figure 5, and figure 6 below, there are some example testing images before and after deep
-learning reconstruction. Here we only show half of the output we obtained, the complete outcome
-can be seen in the folder named /texttt{images}.
+In Figure \ref{fig:full_sampled_no_opt}, Figure \ref{fig:under_sampled_no_opt}, and Figure \ref{fig:reconstructed_no_opt}, there are some example testing images before and after deep learning reconstruction using this baseline model. Here we only show half of the output we obtained, the complete outcome can be seen in the folder named \texttt{images/No\_opt}.
 \begin{figure}[ht]
   \centering
   \begin{subfigure}[b]{0.8\linewidth}
@@ -223,6 +243,7 @@ can be seen in the folder named /texttt{images}.
     \caption{fully sampled image 2}
   \end{subfigure}
   \caption{Fully Sampled Images (Ground Truth)}
+  \label{fig:full_sampled_no_opt}
 \end{figure}
 
 \begin{figure}[ht]
@@ -241,7 +262,8 @@ can be seen in the folder named /texttt{images}.
     \includegraphics[width=\linewidth]{../images/No_opt/under_sampling/under_sampling_2.png}
     \caption{under sampled image 2}
   \end{subfigure}
-  \caption{Under Sampled Images}
+  \caption{Under Sampled Images (Input to Network)}
+  \label{fig:under_sampled_no_opt}
 \end{figure}
 
 \begin{figure}[ht]
@@ -260,149 +282,162 @@ can be seen in the folder named /texttt{images}.
     \includegraphics[width=\linewidth]{../images/No_opt/reconstruction/reconstruction_2.png}
     \caption{reconstruction image 2}
   \end{subfigure}
-  \caption{Reconstruction Images}
+  \caption{Reconstruction Images (Baseline Model - No Dropout/Dynamic LR)}
+  \label{fig:reconstructed_no_opt}
 \end{figure}
 
-Comment on the denoising/dealiasing performance:
-\begin{enumerate} 
-  \item Denoising: The network significantly reduces random noise in the input image,
-        smoothing the image while protecting important structural features such as edges and details.
-  \item Dealiasing: Our network reduces aliasing artefacts and enhances the realism of image
-        textures and structures, avoiding unnatural distortions such as “streaks” and “swirls”.
+Comment on the denoising/dealiasing performance (Baseline Model):
+\begin{enumerate}
+  \item Denoising: The network reduces some noise compared to the undersampled input, but residual noise and artifacts remain.
+  \item Dealiasing: The network attempts to reduce aliasing artifacts, but the reconstruction quality is limited, and some blurring and artifact patterns persist.
 \end{enumerate}
 
-\subsection{Quantitative Evaluation}
-After calculating the PSNR and SSIM for each testing slice before and after deep
-learning reconstruction, we can get that:
+\subsection{Quantitative Evaluation (Baseline Model)}
+After calculating the PSNR and SSIM for each testing slice before and after deep learning reconstruction using the baseline model (no dropout/dynamic LR), we get:
 \begin{enumerate}
   \item The mean of PSNR: 24.15409541, the standard deviation of PSNR: 1.85842901
   \item The mean of SSIM: 0.74309104, the standard deviation of SSIM: 0.03733812
 \end{enumerate}
-From these we can see that: Our neural network successfully restored most of the details 
-and structures. The reconstructed image is highly similar to the real image in terms 
-of structure and texture, and retains relatively rich anatomical details. 
-And the quality is mostly shown to be stable for different images.
+These metrics indicate moderate reconstruction quality. The validation loss curve (Figure \ref{fig:loss_no_opt}) shows fluctuations and a potential increase towards the end, suggesting overfitting, which limits performance.
 
 
 
 \section{Impact of Dropout and Dynamic Learning Rate}
 \textit{Note: }Detailed reconstruction images, related training loss, validation loss and their
- loss curves can be found in \texttt{assets/Training Loss and Validation Loss.png}, 
- \texttt{output/output.txt} and \texttt{images/output}.\\
-We add drop out to our network training, and the code can be found in \texttt{class UNet}.
-And a cosine annealing learning rate schedule with warm-up is employed, which can be
-found in \texttt{function train()}.\\
-By calculating the PSNR and SSIM agian, we can get that:
+loss curves for the optimized model can be found in \texttt{assets/Training Loss and Validation Loss.png},
+\texttt{output/output.txt} and \texttt{images/output}.\\
+We now train our full model, incorporating dropout (p=0.3 in UNet) and a cosine annealing learning rate schedule with warm-up. The code can be found in \texttt{class UNet} and \texttt{function train()}. The training parameters are otherwise the same (Adam, initial LR $10^{-4}$, weight decay $10^{-4}$, batch size 10, L2 loss, 800 epochs).
+
+By calculating the PSNR and SSIM again for this optimized model, we can compare it with the baseline (Table \ref{tab:opt_compare}).
 \begin{table}[H]
-  \caption{Compare PSNR and SSIM with different loss type}
+  \caption{Compare PSNR and SSIM with and without Dropout/Dynamic LR}
+  \label{tab:opt_compare}
   \centering
   \begin{tabular}{lllll}
     \toprule
-    \cmidrule(r){1-2}
-    optimization?     & PSNR mean     & PSNR standard deviation & SSIM mean  & SSIM standard deviation \\
+    Optimization?    & PSNR mean   & PSNR std dev & SSIM mean  & SSIM std dev \\
     \midrule
-    No & 24.15409541  & 1.85842901  & 0.74309104 &  0.03733812  \\
-    Yes     & 29.08446121 & 1.93235576  & 0.84434632 & 0.03711063  \\
+    No               & 24.15409541 & 1.85842901   & 0.74309104 & 0.03733812   \\
+    Yes (Full Model) & 29.08446121 & 1.93235576   & 0.84434632 & 0.03711063   \\
     \bottomrule
   \end{tabular}
 \end{table}
-Compared to the baseline, adding drop out and dynamic learning rate improves PSNR and SSIM.\\
-The mean of PSNR changes from 24.15409541 to 29.08446121, while the standard deviation of it
-does not change too much, indicating that The reconstructed image is much closer to the real 
-image, noise and artifacts are reduced and the image becomes clearer.\\
-The mean of SSIM changes from 0.74309104 to 0.84434632, while the standard deviation of it
-does not change too much, indicating that The structural similarity between the reconstructed 
-image and the real image is significantly improved. The denoising and reconstruction performance 
-of the model is substantially improved and the model better captures the real structure of the image.\\
+
+Compared to the baseline, adding dropout and a dynamic learning rate significantly improves both PSNR and SSIM.
+\begin{itemize}
+  \item The mean PSNR increases from 24.15 to 29.08, indicating a substantial reduction in noise and error, making the reconstructed image much closer to the ground truth.
+  \item The mean SSIM increases from 0.743 to 0.844, indicating a significant improvement in structural similarity. The model better captures the real structure of the image.
+  \item The standard deviations remain relatively low and similar, suggesting consistent performance across the test set for both models, but the optimized model achieves this consistency at a much higher quality level.
+\end{itemize}
 These enhancements are due to:
 \begin{enumerate}
-  \item Dropout reduces overfitting and allows the model to generalize better to unseen data, 
-      avoiding training with too much noise or features from the training set, which can lead 
-      to poor performance on tests. At the same time, the model relies less on local features, 
-      making it more tolerant of undersampling artifacts.
-  \item The dynamic learning rate, ensures that the training both converges quickly and allows 
-      fine-tuning of the model parameters in smaller steps at a later stage for detail tuning 
-      to improve the quality of detail recovery in the reconstructed map.
+  \item Dropout acts as a regularizer, reducing overfitting by preventing the network from relying too heavily on specific neurons or features in the training data. This improves generalization to unseen data and makes the model more robust to undersampling artifacts.
+  \item The dynamic learning rate schedule (cosine annealing with warm-up) helps the training process. The warm-up phase stabilizes initial training, the cosine decay allows for faster convergence initially and then fine-tuning with smaller steps later, helping the model find a better minimum and improve detail recovery.
 \end{enumerate}
-The above two points, combined with weight regularization, substantially enhance the 
-performance of our neural network in image reconstruction.
+The loss curves for the optimized model (Figure \ref{fig:loss_opt}) show much more stable convergence compared to the baseline (Figure \ref{fig:loss_no_opt}).
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\linewidth]{../assets/Training Loss and Validation Loss.png}
+  \caption{Training Loss and Validation Loss (Optimized Model with Dropout/Dynamic LR, L2 Loss)}
+  \label{fig:loss_opt}
+\end{figure}
 
 
 
-\section{Compare L1 with L2}
+\section{Compare L1 with L2 Loss}
 \textit{Note: }Detailed reconstruction images, related training loss, validation loss and their
- loss curves can be found in \texttt{assets/Training Loss and Validation Loss L1.png}, 
- \texttt{output/L1\_Loss\_output.txt} and \texttt{images/L1}.\\
-We replace the L2 loss with L1 loss in the training pipeline, retrain using the same architecture 
-and training parameters, then we get the new PSNR and SSIM. In the table below, we compare them
-with the outcome in (c):
+loss curves can be found in \texttt{assets/Training Loss and Validation Loss L1.png},
+\texttt{output/L1\_Loss\_output.txt} and \texttt{images/L1}.\\
+We replace the L2 loss (MSE) with L1 loss (MAE) in the training pipeline, retraining using the same optimized architecture (dropout, dynamic LR) and training parameters. We then compare the new PSNR and SSIM with the results from the optimized L2 model (Table \ref{tab:loss_compare}).
+
 \begin{table}[H]
-  \caption{Compare PSNR and SSIM with different loss type}
+  \caption{Compare PSNR and SSIM with L1 vs L2 Loss (Optimized Model)}
+  \label{tab:loss_compare}
   \centering
   \begin{tabular}{lllll}
     \toprule
-    \cmidrule(r){1-2}
-    Loss     & PSNR mean     & PSNR standard deviation & SSIM mean  & SSIM standard deviation \\
+    Loss & PSNR mean   & PSNR std dev & SSIM mean  & SSIM std dev \\
     \midrule
-    L1 & 29.15108941  & 2.24063664  & 0.84389277 &  0.04208510  \\
-    L2     & 29.08446121 & 1.93235576  & 0.84434632 & 0.03711063  \\
+    L1   & 29.15108941 & 2.24063664   & 0.84389277 & 0.04208510   \\
+    L2   & 29.08446121 & 1.93235576   & 0.84434632 & 0.03711063   \\
     \bottomrule
   \end{tabular}
 \end{table}
-We can see that L1 loss yields higher PSNR and L2 loss yields higher SSIM in the testing dataset.\\
-Considering that the standard deviations of both PSNR and SSIM are small, it indicates that the 
-performance of the models trained by the two loss functions is stable and similar.\\
-If we are more concerned about the amount of noise and the overall error, then L1 loss is slightly better; 
-if we are more concerned about the degree of structure recovery and the visual quality of the image, 
-then L2 loss is slightly better.
+
+We can see that L1 loss yields slightly higher mean PSNR, while L2 loss yields slightly higher mean SSIM and lower standard deviations for both metrics in the testing dataset.
+
+This phenomenon can be explained as follows:
+\begin{itemize}
+  \item PSNR (Peak Signal-to-Noise Ratio) measures pixel-wise accuracy. L1 loss, by minimizing the mean absolute error, effectively reduces pixel-level discrepancies, thus improving PSNR.
+  \item SSIM (Structural Similarity Index) evaluates structural similarity, focusing on local patterns of luminance, contrast, and structure. L1 loss does not explicitly enforce structural consistency. Small spatial misalignments or distortions, which might minimally impact PSNR, can significantly lower SSIM.
+\end{itemize}
+In short, L1 loss favors pixel-wise precision but may compromise local structural integrity. A potential solution could be a composite loss function combining L1 with a structure-aware loss like SSIM loss or a perceptual loss.
+
+The training curve for L1 loss (Figure \ref{fig:loss_l1}) appears stable. While L1 loss can sometimes promote sparsity, L2 loss often leads to smoother results and is more sensitive to large errors. In this case, both loss functions yield comparable high-quality reconstructions. However, the original configuration with L2 loss achieved slightly better stability (lower standard deviation in metrics) and lower final validation loss values.
+
+Ultimately, the choice of loss function should be guided by the final objective:
+\begin{itemize}
+  \item If precise pixel recovery is the goal, prioritizing PSNR with L1 or L2 loss may suffice.
+  \item If maintaining perceptual quality and structural fidelity is crucial (e.g., in clinical imaging), incorporating structure-aware losses is strongly recommended.
+\end{itemize}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\linewidth]{../assets/Training Loss and Validation Loss L1.png}
+  \caption{Training Loss and Validation Loss (Optimized Model with L1 Loss)}
+  \label{fig:loss_l1}
+\end{figure}
 
 
 
 \section{Unrolled Deep Learning Reconstruction Network}
-% TODO: 
+We explored an unrolled network architecture incorporating data consistency (DC) layers between cascaded instances of our base reconstruction network (Dual UNet + 3D ResNet). The DC layer enforces consistency with the acquired k-space data after each denoising step using the formula:
+$k_{out} = U \odot k_{undersampled} + (1 - U) \odot F(x_{denoised})$, where $k_{undersampled}$ is the initially acquired undersampled k-space data, $x_{denoised}$ is the output of the denoising network, $F$ is the Fourier transform, and $U$ is the undersampling mask. The output image is then $x_{out} = F^{-1}(k_{out})$.
 
+We trained models with 2 cascades (Cascade 2) and 3 cascades (Cascade 3) of the base network + DC layer. Training used the optimized setup (dropout, dynamic LR, L2 loss).
 
+\subsection{Training Details and Results}
+\begin{itemize}
+  \item \textbf{Cascade 2:} Required 18GB GPU memory, trained for 300 epochs. Average time per epoch: ~12 seconds.
+  \item \textbf{Cascade 3:} Required 24GB GPU memory, trained for 300 epochs. Average time per epoch: ~360 seconds (6 minutes).
+\end{itemize}
+The performance metrics are compared with the original single network in Table \ref{tab:unrolled_compare}. The loss curves for Cascade 3 are shown in Figure \ref{fig:loss_unrolled}.
 
-% \section{Tips for writing}
-% \label{tips}
+\begin{table}[H]
+  \caption{Comparison of Original and Unrolled Networks}
+  \label{tab:unrolled_compare}
+  \centering
+  \begin{tabular}{lllllll}
+    \toprule
+    Model     & Epochs & Avg Epoch Time & GPU Mem     & Loss    & PSNR   & SSIM  \\
+    \midrule
+    Original  & 800    & $\sim$ 6 sec   & $\sim$ 10GB & 0.00135 & 29.084 & 0.844 \\
+    Cascade 2 & 300    & $\sim$ 12 sec  & 18GB        & 0.00143 & 28.866 & 0.834 \\
+    Cascade 3 & 300    & $\sim$ 360 sec & 24GB        & 0.00137 & 28.958 & 0.807 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\linewidth]{../assets/Training Loss and Validation Loss Unrolled.png}
+  \caption{Training and Validation Loss Curves for the 3-Cascade Unrolled Network}
+  \label{fig:loss_unrolled}
+\end{figure}
 
-% \subsection{Headings: second level}
-% \subsubsection{Headings: third level}
-
-
-
-% \subsection{Footnotes}
-
-% \footnote{As in this example.}
-
-% \subsection{Figures}
-
-% \begin{figure}
-%   \centering
-%   \fbox{\rule[-.5cm]{0cm}{4cm} \rule[-.5cm]{4cm}{0cm}}
-%   \caption{Sample figure caption.}
-% \end{figure}
-
-
-% \subsection{Tables}
-
-% \begin{table}
-%   \caption{Sample table title}
-%   \label{sample-table}
-%   \centering
-%   \begin{tabular}{lll}
-%     \toprule
-%     \multicolumn{2}{c}{Part}                   \\
-%     \cmidrule(r){1-2}
-%     Name     & Description     & Size ($\mu$m) \\
-%     \midrule
-%     Dendrite & Input terminal  & $\sim$100     \\
-%     Axon     & Output terminal & $\sim$10      \\
-%     Soma     & Cell body       & up to $10^6$  \\
-%     \bottomrule
-%   \end{tabular}
-% \end{table}
+\subsection{Discussion}
+\begin{itemize}
+  \item \textbf{Resource Intensity:} Increasing cascades significantly increased GPU memory usage and training time per epoch.
+  \item \textbf{Performance:} Despite the added complexity and data consistency steps, the cascaded models (trained for 300 epochs) did not outperform the original single network (trained for 800 epochs). Cascade 3 showed slightly better PSNR than Cascade 2 but worse SSIM than both others. The validation loss for Cascade 3 also appears less stable.
+  \item \textbf{Potential Reasons for Limited Improvement:}
+        \begin{enumerate}
+          \item \textbf{Insufficient Training Data:} The dataset size (200 samples) might be too small for these deeper unrolled networks. More data or augmentation might be needed.
+          \item \textbf{Base Network Complexity/Convergence:} The base network is already quite large. It might not have fully converged even after 800 epochs in the original setup, potentially hindering effective iterative refinement in the unrolled setting.
+          \item \textbf{Training Constraints:} The significantly increased training time and memory limited the unrolled models to 300 epochs. Longer training might be required for convergence.
+        \end{enumerate}
+\end{itemize}
+Further investigation with more data, potentially a smaller base network, and extended training times would be necessary to fully assess the potential of this unrolled architecture for our specific problem.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -120,6 +120,32 @@ def pseudo2complex(x):
     """
     return x[..., 0, :, :] + x[..., 1, :, :] * 1j
 
+def real2pseudo(x):
+    """
+    Converts a real-valued tensor to pseudo-complex format.
+    
+    :param x: [..., H, W] Real-valued tensor
+    :return: [..., C=2, H, W] Pseudo-complex tensor
+    """
+    if isinstance(x, np.ndarray):
+        zeros = np.zeros_like(x)
+        return np.stack([x, zeros], axis=-3)
+    elif isinstance(x, torch.Tensor):
+        zeros = torch.zeros_like(x)
+        return torch.stack([x, zeros], dim=-3)
+    else:
+        raise RuntimeError("Unsupported type.")
+
+def real2UnetInput(x):
+    """
+    Converts a real-valued tensor to the model format.
+    
+    :param x: [..., H, W] Real-valued tensor
+    :return: [..., C=3, H, W] Pseudo-complex+amplitude tensor
+    """
+    ret = real2pseudo(x)
+    ret = torch.cat((ret, pseudo2real(ret).unsqueeze(2)), dim=2)
+    return ret
 
 # ================================
 # Preprocessing
