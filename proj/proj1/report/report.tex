@@ -89,7 +89,16 @@
   we investigate the effects of dropout, dynamic learning rate schedules,
   and compare L1 versus L2 losses. Finally, we explore an unrolled network architecture
   incorporating data consistency layers between cascaded instances of our base reconstruction network.
+  Access our code, dataset, and results at \url{https://github.com/XiongWenye/Deep-Learning-Dynamic-MRI-Reconstruction}.
 \end{abstract}
+
+\section{Introduction}
+Dynamic magnetic resonance imaging (MRI) enables visualization of physiological processes by capturing multiple images over time, but faces a fundamental tradeoff between spatial resolution, temporal resolution, and scan duration. Accelerated MRI acquisition through k-space undersampling can address this challenge but introduces aliasing artifacts that degrade image quality. This project explores deep learning approaches to reconstruct high-quality dynamic MRI images from significantly undersampled k-space data (acceleration factor 5).
+
+We develop and evaluate a novel reconstruction framework with three key components: (1) a dual-branch UNet architecture to separately process real and imaginary components of complex MRI data, (2) a 3D ResNet to leverage temporal correlations across dynamic frames, and (3) data consistency layers in an unrolled network configuration to enforce fidelity to the acquired measurements. Throughout our experiments, we investigate how different design choices—including dropout regularization, learning rate schedules, loss functions, and network architecture—affect reconstruction quality as measured by Peak Signal-to-Noise Ratio (PSNR) and Structural Similarity Index (SSIM).
+
+This report documents our methodology, implementation details, experimental results, and analysis across five main sections: undersampling pattern generation, network architecture design, ablation studies on regularization techniques, comparison of loss functions, and exploration of unrolled network architectures. Our findings provide practical insights for designing effective deep learning solutions for dynamic MRI reconstruction.
+
 
 \section{Variable Density Random Undersampling Pattern Generation and Aliasing Artifacts Analysis}
 \textit{Note: }You may need \texttt{train.py}, line 29, function \texttt{variable\_density\_mask()}
@@ -116,7 +125,7 @@ The provided code generates a 4D undersampling mask (shape [batch, frames, heigh
 \subsection{Undersampling Masks Plotting}
 Figure \ref{fig:undersampling_mask} shows the undersampling mask for one dynamic frame and undersampling masks in the ky-t dimension.
 
-\begin{figure}[ht]
+\begin{figure}[H]
   \centering
   \includegraphics[width=\linewidth]{../assets/undersampling_mask.png}
   \caption{Undersampling Mask for one dynamic frame and undersampling masks in the ky-t dimension.}
@@ -126,7 +135,7 @@ Figure \ref{fig:undersampling_mask} shows the undersampling mask for one dynamic
 Thus we can see that the sampling mask is not the same for different dynamic frames.
 That's because sampling positions are randomized per frame to disrupt coherent aliasing artifacts in time. Figure \ref{fig:multiple_masks} shows masks for multiple frames.
 
-\begin{figure}[ht]
+\begin{figure}[H]
   \centering
   \includegraphics[width=0.8\linewidth]{../assets/mask.png}
   \caption{Multiple sampling masks showing the variable density patterns across different temporal frames.}
@@ -135,10 +144,10 @@ That's because sampling positions are randomized per frame to disrupt coherent a
 
 \subsection{Aliased Images Depiction and Comparison}
 From the stem of this question we can know that, given a fully sampled image $m$,
-the aliased image $b$ is computed as:
-\begin{equation}
-  b = F^{-1} U F m
-\end{equation}
+the aliased image $b$ is computed as: 
+\begin{center}
+  $b = F^{-1} U F m$
+\end{center}
 where $F$ is the Fourier transform.
 
 In function \texttt{process\_data()}, we first load the dynamic MRI dataset dataset from the \texttt{cine.npz} file,
@@ -151,7 +160,7 @@ and perform an inverse Fourier transform (\texttt{kspace2image}) on the undersam
 Figure \ref{fig:comparison_images} compares the fully sampled image, aliased image, and sampling mask in Fourier domain.
 Here we choose the first 3 images generated to better compare the aliased images with the fully sampled image.
 
-\begin{figure}[ht]
+\begin{figure}[H]
   \centering
   \begin{subfigure}[b]{\linewidth}
     \includegraphics[width=\linewidth]{../assets/comparison_image_0.png}
@@ -186,30 +195,25 @@ whereas aliasing image has reduced resolution due to insufficient high-frequency
 sampling and produces artifacts.
 
 
-
+\newpage
 \section{Dataset Partition, Denoising Network Construction and Evaluation}
 \textit{Note: }You may need \texttt{train.py}, line 113, class \texttt{UNet};
 line 345, class \texttt{ResNet} and line 497, function \texttt{train()}
 for reference in this section. (Some related functions are also needed)
-
 \subsection{Dataset Partition}
-
-We know that the full dataset containing 200 samples is split into training, validation,
-and testing sets with ratios 4:1:2, resulting in 114 training, 29 validation,
+The full dataset contains 200 samples is split into training, validation, and testing sets with ratios 4:1:2, resulting in 114 training, 29 validation,
 and 57 testing samples.
-
 \subsection{CNN Network Designing and Training}
 Our reconstruction network consists of three components:
 \begin{enumerate}
-  \item \textbf{Dual 2D UNet Architecture:} Two independent UNet modules process the real and imaginary parts of the complex MRI data separately. Each UNet features an encoder-decoder structure with skip connections, attention mechanisms in the bottleneck layer, dropout (p=0.3), LeakyReLU activation, and channel/spatial attention modules.
-  \item \textbf{Concatenation:} The outputs of the two UNet branches are concatenated along the channel dimension.
-  \item \textbf{3D ResNet (Temporal Fusion):} The concatenated features are fed into a lightweight 3D ResNet to integrate temporal information across the MRI sequence using 3D convolutions and residual connections. A final 1x1x1 convolution maps features to the output channels.
+   \item \textbf{Dual 2D UNet Architecture:} Two independent UNet modules process the real and imaginary parts of the complex MRI data separately. Each UNet features an encoder-decoder structure with skip connections. A key component is our implementation of dual attention mechanisms: channel attention that recalibrates feature maps by explicitly modeling interdependencies between channels, and spatial attention that focuses on informative regions by selectively emphasizing important spatial locations. These attention modules significantly enhance feature representation by suppressing irrelevant features and highlighting diagnostically important structures. The UNet architecture also incorporates dropout (p=0.3) for regularization and LeakyReLU activation for improved gradient flow during training.
+    \item \textbf{Concatenation:} The outputs of the two UNet branches are concatenated along the channel dimension, preserving the complementary spatial information extracted from both real and imaginary components.
+    \item \textbf{3D ResNet (Temporal Fusion):} While the UNet branches effectively extract spatial features, temporal correlation between consecutive frames remains unexploited. To address this, we employ a lightweight 3D ResNet that processes the concatenated features through 3D convolutions and residual connections. This temporal fusion module captures dynamic changes across the MRI sequence, leveraging both short-term and long-term dependencies between adjacent frames. By incorporating both spatial context (from UNets) and temporal dynamics (from ResNet), our model effectively suppresses time-varying artifacts and produces temporally coherent reconstructions. A final 1x1x1 convolution maps the spatio-temporal features to the output channels.
 \end{enumerate}
 This design (shown in Figure \ref{fig:pipeline}) effectively utilizes both spatial information (2D UNet processing) and temporal information (capturing dynamic changes via 3D ResNet) for the reconstruction task.
-
-\begin{figure}[ht]
+\begin{figure}[H]
   \centering
-  \includegraphics[width=\linewidth]{../assets/pipeline.png}
+  \includegraphics[width=0.85\linewidth]{../assets/pipeline.png}
   \caption{Overall architecture of our proposed reconstruction network with dual UNet branches for real and imaginary components and 3D ResNet for temporal fusion.}
   \label{fig:pipeline}
 \end{figure}
@@ -218,69 +222,64 @@ We first train a baseline network \textbf{without} dropout and dynamic learning 
 
 All the training loss and validation loss are recorded in the file named \texttt{output/No\_opt\_output.txt}.
 The loss curves for 800 epochs are plotted in Figure \ref{fig:loss_no_opt}.
-\begin{figure}[ht]
+\begin{figure}[H]
   \centering
-  \includegraphics[width=\linewidth]{../assets/Training Loss and Validation Loss No opt.png}
+  \includegraphics[width=0.7\linewidth]{../assets/Training Loss and Validation Loss No opt.png}
   \caption{Training Loss and Validation Loss (No Dropout/Dynamic LR)}
   \label{fig:loss_no_opt}
 \end{figure}
 
-In Figure \ref{fig:full_sampled_no_opt}, Figure \ref{fig:under_sampled_no_opt}, and Figure \ref{fig:reconstructed_no_opt}, there are some example testing images before and after deep learning reconstruction using this baseline model. Here we only show half of the output we obtained, the complete outcome can be seen in the folder named \texttt{images/No\_opt}.
-\begin{figure}[ht]
+In Figures \ref{fig:full_sampled_no_opt}-\ref{fig:reconstructed_no_opt}, we show example testing images before and after deep learning reconstruction using this baseline model. The complete results can be found in the folder \texttt{images/No\_opt}.
+
+\begin{figure}[H]
   \centering
-  \begin{subfigure}[b]{0.8\linewidth}
+  \begin{subfigure}[b]{0.32\linewidth}
     \includegraphics[width=\linewidth]{../images/No_opt/full_sampling/full_sampling_0.png}
-    \caption{fully sampled image 0}
+    \caption{Frame 0}
   \end{subfigure}
-  \quad
-  \begin{subfigure}[b]{0.8\linewidth}
+  \begin{subfigure}[b]{0.32\linewidth}
     \includegraphics[width=\linewidth]{../images/No_opt/full_sampling/full_sampling_1.png}
-    \caption{fully sampled image 1}
+    \caption{Frame 1}
   \end{subfigure}
-  \quad
-  \begin{subfigure}[b]{0.8\linewidth}
+  \begin{subfigure}[b]{0.32\linewidth}
     \includegraphics[width=\linewidth]{../images/No_opt/full_sampling/full_sampling_2.png}
-    \caption{fully sampled image 2}
+    \caption{Frame 2}
   \end{subfigure}
   \caption{Fully Sampled Images (Ground Truth)}
   \label{fig:full_sampled_no_opt}
 \end{figure}
 
-\begin{figure}[ht]
+\begin{figure}[H]
   \centering
-  \begin{subfigure}[b]{0.8\linewidth}
+  \begin{subfigure}[b]{0.32\linewidth}
     \includegraphics[width=\linewidth]{../images/No_opt/under_sampling/under_sampling_0.png}
-    \caption{under sampled image 0}
+    \caption{Frame 0}
   \end{subfigure}
-  \quad
-  \begin{subfigure}[b]{0.8\linewidth}
+  \begin{subfigure}[b]{0.32\linewidth}
     \includegraphics[width=\linewidth]{../images/No_opt/under_sampling/under_sampling_1.png}
-    \caption{under sampled image 1}
+    \caption{Frame 1}
   \end{subfigure}
-  \quad
-  \begin{subfigure}[b]{0.8\linewidth}
+  \begin{subfigure}[b]{0.32\linewidth}
     \includegraphics[width=\linewidth]{../images/No_opt/under_sampling/under_sampling_2.png}
-    \caption{under sampled image 2}
+    \caption{Frame 2}
   \end{subfigure}
   \caption{Under Sampled Images (Input to Network)}
   \label{fig:under_sampled_no_opt}
 \end{figure}
 
-\begin{figure}[ht]
+\begin{figure}[H]
   \centering
-  \begin{subfigure}[b]{0.8\linewidth}
+  \begin{subfigure}[b]{0.32\linewidth}
     \includegraphics[width=\linewidth]{../images/No_opt/reconstruction/reconstruction_0.png}
-    \caption{reconstruction image 0}
+    \caption{Frame 0}
   \end{subfigure}
-  \quad
-  \begin{subfigure}[b]{0.8\linewidth}
+  \begin{subfigure}[b]{0.32\linewidth}
     \includegraphics[width=\linewidth]{../images/No_opt/reconstruction/reconstruction_1.png}
-    \caption{reconstruction image 1}
+    \caption{Frame 1}
   \end{subfigure}
-  \quad
-  \begin{subfigure}[b]{0.8\linewidth}
+  \begin{subfigure}[b]{0.32\linewidth}
     \includegraphics[width=\linewidth]{../images/No_opt/reconstruction/reconstruction_2.png}
-    \caption{reconstruction image 2}
+    \caption{Frame 2}
   \end{subfigure}
   \caption{Reconstruction Images (Baseline Model - No Dropout/Dynamic LR)}
   \label{fig:reconstructed_no_opt}
@@ -336,7 +335,7 @@ These enhancements are due to:
 \end{enumerate}
 The loss curves for the optimized model (Figure \ref{fig:loss_opt}) show much more stable convergence compared to the baseline (Figure \ref{fig:loss_no_opt}).
 
-\begin{figure}[ht]
+\begin{figure}[H]
   \centering
   \includegraphics[width=\linewidth]{../assets/Training Loss and Validation Loss.png}
   \caption{Training Loss and Validation Loss (Optimized Model with Dropout/Dynamic LR, L2 Loss)}
@@ -382,7 +381,7 @@ Ultimately, the choice of loss function should be guided by the final objective:
   \item If maintaining perceptual quality and structural fidelity is crucial (e.g., in clinical imaging), incorporating structure-aware losses is strongly recommended.
 \end{itemize}
 
-\begin{figure}[ht]
+\begin{figure}[H]
   \centering
   \includegraphics[width=\linewidth]{../assets/Training Loss and Validation Loss L1.png}
   \caption{Training Loss and Validation Loss (Optimized Model with L1 Loss)}
@@ -419,7 +418,7 @@ The performance metrics are compared with the original single network in Table \
   \end{tabular}
 \end{table}
 
-\begin{figure}[ht]
+\begin{figure}[H]
   \centering
   \includegraphics[width=\linewidth]{../assets/Training Loss and Validation Loss Unrolled.png}
   \caption{Training and Validation Loss Curves for the 3-Cascade Unrolled Network}
