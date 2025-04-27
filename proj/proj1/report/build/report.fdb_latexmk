@@ -1,5 +1,5 @@
 # Fdb version 4
-["pdflatex"] 1745671336.44324 "/Users/bearxiong/Documents/ShanghaiTech/BME1312_2025_spring/Project/Deep-Learning-Dynamic-MRI-Reconstruction/report/report.tex" "report.pdf" "report" 1745671354.96347 0
+["pdflatex"] 1745685107.36824 "/Users/bearxiong/Documents/ShanghaiTech/BME1312_2025_spring/Project/Deep-Learning-Dynamic-MRI-Reconstruction/report/report.tex" "report.pdf" "report" 1745685125.61285 0
   "../assets/Training Loss and Validation Loss L1.png" 1745669904.94566 38933 e6489920cd9c614260675588e314c12f ""
   "../assets/Training Loss and Validation Loss No opt.png" 1745669904.94665 52220 1851c53a240ddb111c8cc9f05d54b8f7 ""
   "../assets/Training Loss and Validation Loss Unrolled.png" 1745669904.94729 35868 dc918daa7eb942357471f26855d3d5cc ""
@@ -19,7 +19,7 @@
   "../images/No_opt/under_sampling/under_sampling_0.png" 1745669905.21766 1559888 1f7e2dcc57af695c35e8159a139bb581 ""
   "../images/No_opt/under_sampling/under_sampling_1.png" 1745669905.22573 1719940 c3a80d50b4676be869d7ade55043fc6d ""
   "../images/No_opt/under_sampling/under_sampling_2.png" 1745669905.23488 1759576 d390d0d5bbf8e8db1fda6dbf07c9d463 ""
-  "/Users/bearxiong/Documents/ShanghaiTech/BME1312_2025_spring/Project/Deep-Learning-Dynamic-MRI-Reconstruction/report/report.tex" 1745671337.00825 26601 23c5931c35573694f3acfef06a5e1a84 ""
+  "/Users/bearxiong/Documents/ShanghaiTech/BME1312_2025_spring/Project/Deep-Learning-Dynamic-MRI-Reconstruction/report/report.tex" 1745685088.83816 28485 a12dff3e286adbc8f84493b89edaefe4 ""
   "/usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/base/8r.enc" 1165713224 4850 80dc9bab7f31fb78a000ccfed0e27cab ""
   "/usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc" 1136849721 2971 def0b6c1f0b107b3b936def894055589 ""
   "/usr/local/texlive/2024/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
@@ -137,9 +137,9 @@
   "/usr/local/texlive/2024/texmf-var/web2c/pdftex/pdflatex.fmt" 1728201841 8221417 607b798d4334b144a4602854782218f2 ""
   "/usr/local/texlive/2024/texmf.cnf" 1710266656 577 e590dabc9e28c5b61546e15f63eebcdf ""
   "neurips_2023.sty" 1745669906.11461 10805 28d0fb5a2cc69f557caea4c6edf26255 ""
-  "report.aux" 1745671354.87596 7269 518a722c2a6e5963c58aec8e86e06b19 "pdflatex"
-  "report.out" 1745671354.87682 3384 a48d47c150896d03a8947c9fcd9e8a9d "pdflatex"
-  "report.tex" 1745671337.00825 26601 23c5931c35573694f3acfef06a5e1a84 ""
+  "report.aux" 1745685125.53991 7444 9179316244f773088c4cdd253f023506 "pdflatex"
+  "report.out" 1745685125.54057 3799 28098c334dbbaa31caa8b958e3162d31 "pdflatex"
+  "report.tex" 1745685088.83816 28485 a12dff3e286adbc8f84493b89edaefe4 ""
   (generated)
   "report.aux"
   "report.log"

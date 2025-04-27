@@ -316,6 +316,7 @@ By calculating the PSNR and SSIM again for this optimized model, we can compare 
     \toprule
     Optimization?    & PSNR mean   & PSNR std dev & SSIM mean  & SSIM std dev \\
     \midrule
+    Before Recon    & 23.463965 & 2.866855 & 0.572510233579521 & 0.088547643071673 \\
     No               & 24.15409541 & 1.85842901   & 0.74309104 & 0.03733812   \\
     Yes (Full Model) & 29.08446121 & 1.93235576   & 0.84434632 & 0.03711063   \\
     \bottomrule
@@ -358,6 +359,7 @@ We replace the L2 loss (MSE) with L1 loss (MAE) in the training pipeline, retrai
     \toprule
     Loss & PSNR mean   & PSNR std dev & SSIM mean  & SSIM std dev \\
     \midrule
+    Before Recon    & 23.463965 & 2.866855 & 0.572510233579521 & 0.088547643071673 \\
     L1   & 29.15108941 & 2.24063664   & 0.84389277 & 0.04208510   \\
     L2   & 29.08446121 & 1.93235576   & 0.84434632 & 0.03711063   \\
     \bottomrule
@@ -387,6 +389,19 @@ Ultimately, the choice of loss function should be guided by the final objective:
   \caption{Training Loss and Validation Loss (Optimized Model with L1 Loss)}
   \label{fig:loss_l1}
 \end{figure}
+
+
+\subsection{Application of Perceptual Loss and Edge Loss in MRI Reconstruction}
+
+In MRI reconstruction tasks, especially under highly undersampled conditions, achieving both high numerical accuracy and perceptually pleasing images is crucial. Traditional pixel-wise losses such as Mean Squared Error (MSE) tend to produce blurry reconstructions, as they overly penalize small pixel mismatches without considering the structural or perceptual quality of the image.
+
+\textbf{Perceptual loss} addresses this limitation by measuring the difference between the reconstructed and ground truth images in the feature space of a pre-trained convolutional neural network. This encourages the model to preserve high-level semantic features and fine textures.
+
+\textbf{Edge loss}, on the other hand, focuses explicitly on preserving sharp structural details. By applying an edge detection operator (such as Sobel filters) to both the reconstructed and ground truth images and minimizing the difference between their edge maps, the network is guided to accurately recover critical high-frequency components, such as organ boundaries and anatomical structures, which are vital in medical imaging.
+
+Combining perceptual loss and edge loss with traditional pixel-wise losses leads to reconstructions that are not only numerically superior but also visually much sharper and structurally more faithful to the original anatomy.
+
+Due to the restrictions of the current project, we did not implement perceptual loss and edge loss in our training pipeline. We recommend exploring these advanced loss functions in future work to further enhance the quality of MRI reconstructions, especially in challenging undersampling scenarios.
 
 
 
