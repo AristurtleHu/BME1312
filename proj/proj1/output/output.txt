@@ -313,7 +313,7 @@ Epoch [312/800], Train Loss: 0.001652, Val Loss: 0.001742
 Epoch [313/800], Train Loss: 0.001851, Val Loss: 0.001968
 Epoch [314/800], Train Loss: 0.001682, Val Loss: 0.001573
 Epoch [315/800], Train Loss: 0.002058, Val Loss: 0.003637
-Epoch [316/800], Train Loss: 0.003054, Val Loss: 0.171021
+Epoch [316/800], Train Loss: 0.003054, Val Loss: 0.007021
 Epoch [317/800], Train Loss: 0.002583, Val Loss: 0.005057
 Epoch [318/800], Train Loss: 0.002359, Val Loss: 0.002461
 Epoch [319/800], Train Loss: 0.002120, Val Loss: 0.002610

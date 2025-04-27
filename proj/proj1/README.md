@@ -226,6 +226,22 @@ Ultimately, the choice of loss function should be guided by the final objective 
 
 - If maintaining perceptual quality and structural fidelity is crucial (e.g., in clinical imaging), incorporating structure-aware losses is strongly recommended.
 
+## Creativity: Comparison with Attention Mechanisms
+
+To evaluate the impact of attention mechanisms, we incorporated channel attention and spatial attention modules into the baseline network. These modules were added to the encoder-decoder structure of the UNet branches to enhance feature representation by focusing on the most informative regions and channels.
+
+The performance metrics for the attention-based model are compared with the baseline (optimized with dropout and dynamic LR) in the table below.
+
+| Model | PSNR mean | PSNR std dev | SSIM mean | SSIM std dev |
+|-------|-----------|--------------|-----------|--------------|
+| Baseline (Optimized) | 29.08446121 | 1.93235576 | 0.84434632 | 0.03711063 |
+| Attention-Based | 32.38721751 | 1.87722389 | 0.89100512 | 0.03601302 |
+
+### Discussion
+- **PSNR Improvement:** The attention-based model achieved a higher mean PSNR compared to the baseline, indicating better pixel-wise reconstruction accuracy.
+- **SSIM Improvement:** The mean SSIM also improved, suggesting that the attention mechanisms helped preserve structural details more effectively.
+- **Stability:** The standard deviations for both PSNR and SSIM were slightly lower in the attention-based model, indicating more consistent performance across the test set.
+
 ### Conclusion:
 The experiments demonstrate that dropout and dynamic learning rate schedules are crucial for achieving optimal performance and preventing overfitting. Both L1 and L2 loss functions can lead to good results, with L2 providing slightly more stable performance metrics in our final configuration. The original setup (with dropout, dynamic LR, and L2 loss) provided the best balance of performance and stability.
 

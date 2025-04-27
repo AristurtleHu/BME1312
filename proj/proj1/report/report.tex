@@ -35,8 +35,11 @@
 \usepackage{graphicx}       % Required for including graphics
 \usepackage{subcaption}     % Required for subfigure environment
 \usepackage{listings}       % Required for lstlisting environment
-\usepackage{float}
+\usepackage{float}          % Enables tables to be rendered anywhere on the page
 \usepackage{amsmath}        % For math environments like equation
+\usepackage{pgfplots}       % For histogram
+\usepackage{tikz}           % For histogram
+\pgfplotsset{compat=1.18}
 
 
 \title{BME1312 Project1 Report: Deep Learning for MRI Reconstruction}
@@ -343,7 +346,12 @@ The loss curves for the optimized model (Figure \ref{fig:loss_opt}) show much mo
   \label{fig:loss_opt}
 \end{figure}
 
-
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\linewidth]{../images/compare.PNG}
+  \caption{Comparison of the reconstruction(left) and the ground truth(right) for frame 0.}
+  \label{fig:compare}
+\end{figure}
 
 \section{Compare L1 with L2 Loss}
 \textit{Note: }Detailed reconstruction images, related training loss, validation loss and their
@@ -403,7 +411,62 @@ Combining perceptual loss and edge loss with traditional pixel-wise losses leads
 
 Due to the restrictions of the current project, we did not implement perceptual loss and edge loss in our training pipeline. We recommend exploring these advanced loss functions in future work to further enhance the quality of MRI reconstructions, especially in challenging undersampling scenarios.
 
+\section{Creativity: Comparison with Attention Mechanisms}
 
+To evaluate the impact of attention mechanisms, we incorporated channel attention and spatial attention modules into the baseline network. These modules were added to the encoder-decoder structure of the UNet branches to enhance feature representation by focusing on the most informative regions and channels.
+
+The performance metrics for the attention-based model are compared with the baseline (optimized with dropout and dynamic LR) in Table \ref{tab:attention_compare}.
+
+\begin{table}[H]
+  \caption{Comparison of Baseline and Attention-Based Models}
+  \label{tab:attention_compare}
+  \centering
+  \begin{tabular}{lllll}
+    \toprule
+    Model               & PSNR mean   & PSNR std dev & SSIM mean  & SSIM std dev \\
+    \midrule
+    Baseline (Optimized) & 29.08446121 & 1.93235576   & 0.84434632 & 0.03711063   \\
+    Attention-Based      & 32.38721751 & 1.87722389   & 0.89100512 & 0.03601302   \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Discussion}
+\begin{itemize}
+  \item \textbf{PSNR Improvement:} The attention-based model achieved a higher mean PSNR compared to the baseline, indicating better pixel-wise reconstruction accuracy.
+  \item \textbf{SSIM Improvement:} The mean SSIM also improved, suggesting that the attention mechanisms helped preserve structural details more effectively.
+  \item \textbf{Stability:} The standard deviations for both PSNR and SSIM were slightly lower in the attention-based model, indicating more consistent performance across the test set.
+\end{itemize}
+
+\subsection{Loss Curves}
+The training and validation loss curves for the attention-based model are shown in Figure \ref{fig:loss_attention}. The curves demonstrate stable convergence, with lower final validation loss compared to the baseline.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{../assets/Training Loss and Validation Loss with attention.png}
+  \caption{Training Loss and Validation Loss (Attention-Based Model)}
+  \label{fig:loss_attention}
+\end{figure}
+
+\subsection{Visual Comparison}
+Figure \ref{fig:attention_comparison} compares the reconstruction results of the attention-based models with full sampled one for a sample frame. 
+
+\begin{figure}[H]
+  \centering
+  \begin{subfigure}[b]{0.32\linewidth}
+    \includegraphics[width=\linewidth]{../images/with_attention/full_sampling/full_sampling_0.png}
+    \caption{Ground Truth}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.32\linewidth}
+    \includegraphics[width=\linewidth]{../images/with_attention/reconstruction/reconstruction_0.png}
+    \caption{Attention-Based Reconstruction}
+  \end{subfigure}
+  \caption{Comparison of Reconstruction Results (Frame 0)}
+  \label{fig:attention_comparison}
+\end{figure}
+
+\subsection{Conclusion}
+Incorporating attention mechanisms significantly improved both quantitative metrics (PSNR and SSIM) and visual quality. The attention modules enhanced the network's ability to focus on critical features, leading to sharper and more accurate reconstructions. Future work could explore combining attention mechanisms with unrolled architectures for further improvements.
 
 \section{Unrolled Deep Learning Reconstruction Network}
 We explored an unrolled network architecture incorporating data consistency (DC) layers between cascaded instances of our base reconstruction network (Dual UNet + 3D ResNet). The DC layer enforces consistency with the acquired k-space data after each denoising step using the formula:
@@ -452,6 +515,78 @@ The performance metrics are compared with the original single network in Table \
         \end{enumerate}
 \end{itemize}
 Further investigation with more data, potentially a smaller base network, and extended training times would be necessary to fully assess the potential of this unrolled architecture for our specific problem.
+
+
+
+\section{Conclusion}
+In histogram \ref{fig:PSNR Values for Each Model} and \ref{fig:SSIM Values for Each Model}, we can have a visual comparison of the implementation of the models covered in this report.\\
+Noted that, in the following histogram:
+\begin{enumerate}
+  \item "M1" refers to: Baseline, Dual UNet + 3D ResNet with L2 Loss, no optimization.
+  \item "M2" refers to: Baseline with dropout and dynamic lr.
+  \item "M3" refers to: Baseline with L2 Loss replaced with L1 Loss.
+  \item "U1" refers to: Baseline with attention mechanisms.
+  \item "U2" refers to: Unrolled denoising network with 2 cascades.
+  \item "U3" refers to: Unrolled denoising network with 3 cascades.
+\end{enumerate}
+
+\begin{figure}[H]
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}
+    [ybar, 
+    grid = major, major grid style = {dashed},
+    ymin = 0,
+    ylabel = {PSNR values},
+    title = {PSNR Values for Each Model},
+    bar width = .5cm,
+    width = 40cm,
+    height = 6cm,
+    symbolic x coords={M1, M2, M3, U1, U2, U3},
+    x = 2cm,
+    xtick = data,
+    nodes near coords,
+    nodes near coords style = {font = \fontsize{8}{12}\selectfont},
+    enlarge x limits = 0.2,
+    legend style = {at = {(0.5,-0.2)},anchor = north,legend columns = -1},
+    ] 
+    \addplot+ coordinates {(M1, 24.15) (M2, 29.08) (M3, 29.15) (U1, 32.39) (U2, 29.29) (U3, 28.96)}; 
+    \addplot+ coordinates {(M1, 1.86) (M2, 1.93) (M3, 2.24) (U1, 1.88) (U2, 1.93) (U3, 1.81)}; 
+    \legend{PSNR mean, PSNR std};
+    \end{axis} 
+  \end{tikzpicture}
+  \caption{PSNR Values for Each Model}
+  \label{fig:PSNR Values for Each Model}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}
+    [ybar, 
+    grid = major, major grid style = {dashed},
+    ymin = 0,
+    ylabel = {SSIM values},
+    title = {SSIM Values for Each Model},
+    bar width = .5cm,
+    width = 40cm,
+    height = 6cm,
+    symbolic x coords={M1, M2, M3, U1, U2, U3},
+    x = 2cm,
+    xtick = data,
+    nodes near coords,
+    nodes near coords style = {font = \fontsize{8}{12}\selectfont},
+    enlarge x limits = 0.2,
+    legend style = {at = {(0.5,-0.2)},anchor = north,legend columns = -1},
+    ] 
+    \addplot+ coordinates {(M1, 0.743) (M2, 0.844) (M3, 0.844) (U1, 0.891) (U2, 0.815) (U3, 0.807)}; 
+    \addplot+ coordinates {(M1, 0.037) (M2, 0.037) (M3, 0.042) (U1, 0.036) (U2, 0.037) (U3, 0.041)}; 
+    \legend{SSIM mean, SSIM std};
+    \end{axis} 
+  \end{tikzpicture}
+  \caption{SSIM Values for Each Model}
+  \label{fig:SSIM Values for Each Model}
+\end{figure}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
