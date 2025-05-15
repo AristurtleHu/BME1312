@@ -28,4 +28,18 @@ Generate variable density undersampling patterns with acceleration factor 5 and 
 ### Lab 1: Advanced MRI Reconstruction
 
 - **Task:** Reconstruct MRI images from undersampled k-space data using a Cascade Network.
-- **Enhancements:** Integrate dropout and data augmentation for improved robustness and accuracy.
+
+#### Enhancements:
+
+- Integrate dropout and data augmentation for improved robustness and accuracy.
+
+### Lab 2
+
+- **Task:** Implement a U-Net-based convolutional neural network for 2D medical image segmentation.
+ 
+ #### Enhancements:
+
+- Data augmentation.
+- Segmentation metrics: accuracy, sensitivity, specificity, precision, F1, Jaccard (IoU), and Dice coefficient.
+- Use binary cross-entropy loss for training.
+- With learning rate scheduling and validate on a separate set.
