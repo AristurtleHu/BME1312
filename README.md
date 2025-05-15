@@ -33,7 +33,7 @@ Generate variable density undersampling patterns with acceleration factor 5 and 
 
 - Integrate dropout and data augmentation for improved robustness and accuracy.
 
-### Lab 2
+### Lab 2: 2D Medical Image Segmentation
 
 - **Task:** Implement a U-Net-based convolutional neural network for 2D medical image segmentation.
  
