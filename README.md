@@ -18,6 +18,16 @@ This cross-disciplinary course aims to address the knowledge gaps for students f
  
 Generate variable density undersampling patterns with acceleration factor 5 and central k-space sampling, analyze the resulting aliasing artifacts, and evaluate reconstruction performance with PSNR and SSIM metrics.
 
+### Project 2: Cardiac Cine MRI Segmentation
+
+[code](https://github.com/XiongWenye/Deep-learning-Cardiac-Cine-MRI-Segmentation)
+
+- **Objective:** Segment the left ventricle (LV), right ventricle (RV), and myocardium (MYO) from cardiac cine MRI images
+- **Approach:** Design a custom U-Net architecture for segmentation.
+- **Loss Function:** One uses cross-entropy loss and another uses soft Dice loss for training.
+
+Compute Dice coefficients for LV, RV, and MYO on all test slices. Report the mean and standard deviation for each.
+
 ## Labs
 
 ### Lab 0: Handwritten Digit Recognition
@@ -43,3 +53,7 @@ Generate variable density undersampling patterns with acceleration factor 5 and 
 - Segmentation metrics: accuracy, sensitivity, specificity, precision, F1, Jaccard (IoU), and Dice coefficient.
 - Use binary cross-entropy loss for training.
 - With learning rate scheduling and validate on a separate set.
+
+## Paper Reading
+
+[report](https://github.com/xiaoyang13/BME1312_PaperReading)
