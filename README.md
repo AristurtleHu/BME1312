@@ -25,6 +25,9 @@ Generate variable density undersampling patterns with acceleration factor 5 and 
 - **Objective:** Segment the left ventricle (LV), right ventricle (RV), and myocardium (MYO) from cardiac cine MRI images
 - **Approach:** Design a custom U-Net architecture for segmentation.
 - **Loss Function:** One uses cross-entropy loss and another uses soft Dice loss for training.
+- **Improvements:**
+  - Attention mechanism to enhance feature extraction.
+  - Hybrid loss function for better performance.
 
 Compute Dice coefficients for LV, RV, and MYO on all test slices. Report the mean and standard deviation for each.
 
